@@ -1,4 +1,5 @@
 from SmartSearch import infer_search
+from Pokeprint import print_pokemon
 import os
 import csv
 
@@ -8,7 +9,7 @@ def loadPokemon():
         rows = list(csv.DictReader(file))
 
     if not rows:
-        print("lYou did not catch them all...")
+        print("You did not catch them all...")
         return None
     return rows
 
@@ -22,6 +23,11 @@ def remove_pokemon(pokemon_list):
     pass
 
 def save_pokemon(pokemon_list):
+    field_names = ["dex", "name", "type1", "type2", "gen", "height_m", "weight_kg"]
+    with open("list.csv", "w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, field_names)
+        writer.writeheader()
+        writer.writerows(pokemon_list)
     pass
 
 
@@ -57,7 +63,8 @@ if __name__ == '__main__':
             continue
 
         if choice == 1:
-            view_pokemon(pokemon_list)
+            print()
+            print_pokemon(pokemon_list)
         elif choice == 2:
             search_pokemon(pokemon_list)
         elif choice == 3:
