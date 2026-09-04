@@ -1,9 +1,10 @@
 from SmartSearch import infer_search
 from Pokeprint import print_pokemon
 import urllib.request
-import os
-import csv
 import json
+import csv
+import os
+
 
 def loadPokemon():
     with open("list.csv", "r", encoding="utf-8") as file:
