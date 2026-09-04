@@ -1,8 +1,9 @@
 from SmartSearch import infer_search
 from Pokeprint import print_pokemon
+import urllib.request
 import os
 import csv
-
+import json
 
 def loadPokemon():
     with open("list.csv", "r", encoding="utf-8") as file:
@@ -14,13 +15,109 @@ def loadPokemon():
     return rows
 
 def search_pokemon(pokemon_list):
-    pass
+    query = input("Enter a search query: ")
+    field, value = infer_search(query)
+
+    ids = []
+    for mon in pokemon_list:
+        if field == "type1":
+            hit = (
+                mon["type1"].lower() == str(value).lower()
+                or mon.get("type2", "").lower() == str(value).lower()
+            )
+        else:
+            hit = str(mon[field]).lower() == str(value).lower()
+
+        if hit:
+            ids.append(int(mon["dex"]))
+
+    print_pokemon(pokemon_list, ids)
 
 def add_pokemon(pokemon_list):
-    pass
+    query = input("Enter a pokemon to add: ")
+    field, value = infer_search(query)
+    rows = fetch_pokemon_from_api(field, value)
+
+    if not rows:
+        print("No results.")
+        input("Press Enter to continue...")
+        return
+
+    for i, mon in enumerate(rows, start=1):
+        print(f"{i}. #{mon['dex']} - {mon['name']}")
+
+    try:
+        choice = int(input("Add which number? "))
+    except ValueError:
+        print("Be sure to type the (number).")
+        return
+
+    if choice < 1 or choice > len(rows):
+        print("That number is not on the list.")
+        return
+
+    selected = rows[choice - 1]
+    pokemon_list.append(selected)
+    print(f"Added {selected['name']}.")
+
+def fetch_pokemon_from_api(field, value):
+    if field not in ("name", "dex"):
+        print("Add needs a name or dex number.")
+        return []
+
+    key = str(value).strip().lower()
+    url = f"https://pokeapi.co/api/v2/pokemon/{key}"
+
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "pokymans/1.0"},
+    )
+
+    with urllib.request.urlopen(request) as response:
+        data = json.loads(response.read().decode("utf-8"))
+
+    types = [t["type"]["name"].title() for t in data["types"]]
+    row = {
+        "dex": str(data["id"]),
+        "name": data["name"].title(),
+        "type1": types[0],
+        "type2": types[1] if len(types) > 1 else "",
+        "gen": "",
+        "height_m": str(data["height"] / 10),
+        "weight_kg": str(data["weight"] / 10),
+    }
+    return [row]
 
 def remove_pokemon(pokemon_list):
-    pass
+    query = input("Enter a search query to remove: ")
+    field, value = infer_search(query)
+
+    ids = []
+    for mon in pokemon_list:
+        if field == "type1":
+            hit = (
+                mon["type1"].lower() == str(value).lower()
+                or mon.get("type2", "").lower() == str(value).lower()
+            )
+        else:
+            hit = str(mon[field]).lower() == str(value).lower()
+
+        if hit:
+            ids.append(int(mon["dex"]))
+
+    if not ids:
+        print("No matching pokemon to remove.")
+        input("Press Enter to continue...")
+        return
+
+    print()
+    print("Removing...")
+    print_pokemon(pokemon_list, ids)
+
+    wanted = {str(i) for i in ids}
+    pokemon_list[:] = [
+        mon for mon in pokemon_list if str(mon["dex"]) not in wanted
+    ]
 
 def save_pokemon(pokemon_list):
     field_names = ["dex", "name", "type1", "type2", "gen", "height_m", "weight_kg"]
@@ -29,14 +126,6 @@ def save_pokemon(pokemon_list):
         writer.writeheader()
         writer.writerows(pokemon_list)
     pass
-
-
-
-
-
-
-
-
 
 
 
